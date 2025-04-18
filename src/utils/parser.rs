@@ -101,7 +101,7 @@ mod tests {
 
     #[test]
     fn parse_test() {
-        let content = fs::read_to_string("data/simple1.txt")
+        let content = fs::read_to_string("data/simple2.txt")
             .expect("Failed to read txt file.");
 
         let metas = Parser::parse_file(&content);
@@ -114,13 +114,12 @@ mod tests {
                 let rs = fmt_fp(m.rs).unwrap_or("-".to_string());
                 let rt = fmt_fp(m.rt).unwrap_or("-".to_string());
                 let base = m.base.map(|r| format!("R{}", r)).unwrap_or("-".into());
-
+                let offset = if m.base.is_some() { m.offset.to_string() } else { "-".into() };
+                
             format!(
-                "{:02}: {:<5} rd:{:<3} rs:{:<3} rt:{:<3} offset:{:<3} base:{}",
-                i,
-                format!("{:?}", m.inst_type),
-                rd, rs, rt,
-                m.offset, base
+                "{:<03}:  {:<6} rd: {:<6} rs: {:<6} rt: {:<6} offset: {:<6} base: {}",
+                i, format!("{:?}", m.inst_type),
+                rd, rs, rt, offset, base
             )
         })
         .collect::<Vec<_>>()
