@@ -2,12 +2,25 @@ use super::types::Cycle;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum InstructionType {
-    LD,        // L.D
-    SD,        // S.D
-    ADDD,      // ADD.D
-    SUBD,      // SUB.D
-    MULD,      // MUL.D
-    DIVD,      // DIV.D
+    LD,      // L.D
+    SD,      // S.D
+    ADDD,    // ADD.D
+    SUBD,    // SUB.D
+    MULD,    // MUL.D
+    DIVD,    // DIV.D
+}
+
+impl InstructionType {
+    pub fn exec_cycles(&self) -> i32 {
+        match self {
+            InstructionType::LD => 2,
+            InstructionType::SD => 1,
+            InstructionType::ADDD => 2,
+            InstructionType::SUBD => 2,
+            InstructionType::MULD => 10,
+            InstructionType::DIVD => 40,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -28,6 +41,16 @@ pub struct InstructionTime {
     pub exec_start: Option<Cycle>,
     pub completion: Option<Cycle>,
     pub write_back: Option<Cycle>,
+}
+
+impl std::fmt::Display for InstructionTime {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Issue = {:?}, Exec start = {:?}, completion = {:?}, Write_back = {:?}",
+            self.issue, self.exec_start, self.completion, self.write_back
+        )
+    }
 }
 
 #[derive(Debug, Clone)]
