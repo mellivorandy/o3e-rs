@@ -28,7 +28,16 @@ pub struct Tomasulo {
 }
 
 impl Tomasulo {
-    pub fn new() -> Self {
+    pub fn from_file(path: &str) -> std::io::Result<Self> {
+        let content = std::fs::read_to_string(path)?;
+        let metas = Parser::parse_file(&content);
+        let instructions = metas.into_iter()
+            .map(Instruction::new)
+            .collect();
+        Ok(Self::new(instructions))
+    }
+    
+    pub fn new(instructions: Vec<Instruction>) -> Self {
         let add_stations: Vec<_> = (1..=3)
             .map(|i| ReservationStation::new(&format!("Add{}", i)))
             .collect();
