@@ -10,10 +10,12 @@ impl RegisterFile {
         Self::default()
     }
 
+    #[allow(dead_code)]
     pub fn read_fp(&self, name: &str) -> Option<f64> {
         Parser::parse_fp_register(name).map(|idx| self.fp[idx as usize])
     }
 
+    #[allow(dead_code)]
     pub fn write_fp(&mut self, name: &str, value: f64) -> bool {
         match Parser::parse_fp_register(name) {
             Some(idx) => {
@@ -24,10 +26,12 @@ impl RegisterFile {
         }
     }
 
+    #[allow(dead_code)]
     pub fn read_int(&self, name: &str) -> Option<i32> {
         Parser::parse_int_register(name).map(|idx| self.int[idx as usize])
     }
 
+    #[allow(dead_code)]
     pub fn write_int(&mut self, name: &str, value: i32) -> bool {
         match Parser::parse_int_register(name) {
             Some(idx) => {
