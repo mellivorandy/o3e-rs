@@ -29,7 +29,7 @@ impl Parser {
                     rt: None,
                     
                     base: Some(base),
-                    offset,
+                    offset: Some(offset),
                 })
             }
 
@@ -51,7 +51,7 @@ impl Parser {
                     rt: Some(rt),
 
                     base: None,
-                    offset: 0,
+                    offset: None,
                 })
             }
 
@@ -114,7 +114,7 @@ mod tests {
                 let rs = fmt_fp(m.rs).unwrap_or("-".to_string());
                 let rt = fmt_fp(m.rt).unwrap_or("-".to_string());
                 let base = m.base.map(|r| format!("R{}", r)).unwrap_or("-".into());
-                let offset = if m.base.is_some() { m.offset.to_string() } else { "-".into() };
+                let offset = m.offset.map_or("-".to_string(), |v| v.to_string());
                 
             format!(
                 "{:<03}:  {:<6} rd: {:<6} rs: {:<6} rt: {:<6} offset: {:<6} base: {}",
