@@ -1,5 +1,8 @@
 use super::types::Cycle;
 
+pub type FPRegister = u8;
+pub type IntRegister = u8;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum InstructionType {
     LD,      // L.D
@@ -11,7 +14,7 @@ pub enum InstructionType {
 }
 
 impl InstructionType {
-    pub fn exec_cycles(&self) -> i32 {
+    pub fn exec_cycles(&self) -> u32 {
         match self {
             InstructionType::LD => 2,
             InstructionType::SD => 1,
@@ -27,12 +30,12 @@ impl InstructionType {
 pub struct InstructionMeta {
     pub inst_type: InstructionType,
 
-    pub rd: Option<u8>,
-    pub rs: Option<u8>,
-    pub rt: Option<u8>,
+    pub rd: Option<FPRegister>,
+    pub rs: Option<FPRegister>,
+    pub rt: Option<FPRegister>,
     
-    pub base: Option<u8>,
-    pub offset: i32,
+    pub base: Option<IntRegister>,
+    pub offset: Option<i32>,           
 }
 
 #[derive(Debug, Clone, Default)]
@@ -47,7 +50,7 @@ impl std::fmt::Display for InstructionTime {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Issue = {:?}, Exec start = {:?}, completion = {:?}, Write_back = {:?}",
+            "Issue = {:?}, Exec start = {:?}, Completion = {:?}, Write_back = {:?}",
             self.issue, self.exec_start, self.completion, self.write_back
         )
     }
