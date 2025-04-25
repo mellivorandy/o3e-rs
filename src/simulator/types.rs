@@ -14,6 +14,7 @@ impl Cycle {
         self.0
     }
 
+    #[allow(dead_code)]
     pub fn diff(&self, other: &Cycle) -> u32 {
         self.0.saturating_sub(other.0)
     }
