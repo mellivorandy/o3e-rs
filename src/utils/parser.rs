@@ -42,8 +42,8 @@ impl Parser {
                     inst_type: match inst_type.as_str() {
                         "ADD.D" => InstructionType::ADDD,
                         "SUB.D" => InstructionType::SUBD,
-                        "MUL.D" => InstructionType::MULD,
-                        _       => InstructionType::DIVD,
+                        "MUL.D" => InstructionType::MULTD,
+                        _ => InstructionType::DIVD,
                     },
 
                     rd: Some(rd),
