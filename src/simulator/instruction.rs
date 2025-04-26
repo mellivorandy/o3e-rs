@@ -9,7 +9,7 @@ pub enum InstructionType {
     SD,      // S.D
     ADDD,    // ADD.D
     SUBD,    // SUB.D
-    MULD,    // MUL.D
+    MULTD,   // MUL.D
     DIVD,    // DIV.D
 }
 
@@ -20,7 +20,7 @@ impl InstructionType {
             InstructionType::SD => 1,
             InstructionType::ADDD => 2,
             InstructionType::SUBD => 2,
-            InstructionType::MULD => 10,
+            InstructionType::MULTD => 10,
             InstructionType::DIVD => 40,
         }
     }
