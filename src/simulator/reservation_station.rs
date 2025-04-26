@@ -4,7 +4,7 @@ use super::instruction::InstructionType;
 pub struct ReservationStation {
     pub name: String,                          // Name of the station, e.g., Add1 
 
-    pub inst_type: Option<InstructionType>,    // Type of the instruction, e.g., MUL.D
+    pub op: Option<InstructionType>,    // Type of the instruction, e.g., MUL.D
 
     pub vj: Option<f64>,
     pub vk: Option<f64>,
@@ -35,7 +35,7 @@ impl Default for ReservationStation {
     fn default() -> Self {
         Self {
             name: String::new(),
-            inst_type: None,
+            op: None,
             vj: None,
             vk: None,
             qj: None,
@@ -44,5 +44,42 @@ impl Default for ReservationStation {
             remaining_cycles: 0,
             inst_idx: None,
         }
+    }
+}
+
+impl std::fmt::Display for ReservationStation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{:<5} | busy: {:<3} | op: {:<6} | vj: {:<6} | vk: {:<6} | qj: {:<6} | qk: {:<6} | remain: {:<2} | inst_idx: {}",
+            
+            self.name,
+            if self.busy { "Yes" } else { "No" },
+
+            match &self.op {
+                Some(inst_type) => format!("{:?}", inst_type),
+                None => "-".to_string(),
+            },
+
+            match self.vj {
+                Some(v) => format!("{:.2}", v),
+                None => "-".to_string(),
+            },
+
+            match self.vk {
+                Some(v) => format!("{:.2}", v),
+                None => "-".to_string(),
+            },
+
+            self.qj.as_deref().unwrap_or("-"),
+            self.qk.as_deref().unwrap_or("-"),
+
+            self.remaining_cycles,
+
+            match self.inst_idx {
+                Some(idx) => idx.to_string(),
+                None => "-".to_string(),
+            }
+        )
     }
 }
