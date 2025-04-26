@@ -56,16 +56,26 @@ impl Default for RegisterFile {
 
 impl std::fmt::Display for RegisterFile {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "===== Floating Point Registers =====")?;
+        writeln!(f, "------------- Floating Point Registers -------------")?;
         for (i, v) in self.fp.iter().enumerate() {
             let name = fp_index_to_name(i as u8);
-            writeln!(f, "{} = {}", name, v)?;
+            write!(f, "{:<3} = {:<7.2} ", name, v)?;
+            
+            if (i + 1) % 4 == 0 {
+                writeln!(f)?;
+            }
         }
+        writeln!(f)?;
 
-        writeln!(f, "===== Integer Registers =====")?;
+        writeln!(f, "-------------------------------- Integer Registers ---------------------------------")?;
         for (i, v) in self.int.iter().enumerate() {
-            writeln!(f, "R{} = {}", i, v)?;
+            write!(f, "R{:<2} = {:<4} ", i, v)?;
+            
+            if (i + 1) % 8 == 0 {
+                writeln!(f)?;
+            }
         }
+        writeln!(f)?;
 
         Ok(())
     }
