@@ -1,6 +1,6 @@
 #[derive(Default)]
 pub struct RegisterResultStatus {
-    table: [Option<String>; 16],    // F0, F2, F4, ..., F30
+    pub table: [Option<String>; 16],    // F0, F2, F4, ..., F30
 }
 
 impl RegisterResultStatus {
@@ -21,5 +21,24 @@ impl RegisterResultStatus {
 
     pub fn clear(&mut self, fp_num: usize) {
         self.table[Self::fp_num_to_index(fp_num)] = None;
+    }
+}
+
+impl std::fmt::Display for RegisterResultStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (i, entry) in self.table.iter().enumerate() {
+            let name = format!("F{}", i * 2);
+            
+            match entry {
+                Some(station) => write!(f, "{:<3}: {:<7}", name, station)?,
+                None => write!(f, "{:<3}: {:<7}", name, "-")?,
+            }
+            
+            if (i + 1) % 4 == 0 {
+                writeln!(f)?;
+            }
+        }
+        
+        Ok(())
     }
 }
