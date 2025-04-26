@@ -66,8 +66,7 @@ impl Parser {
     pub fn parse_fp_register(token: &str) -> Option<u8> {
         token.strip_prefix('F')?
              .parse::<u8>().ok()
-             .filter(|n| n % 2 == 0 && *n <= 30)
-             .map(|n| n / 2)
+             .filter(|n| *n <= 31)
     }
 
     pub fn parse_int_register(token: &str) -> Option<u8> {
@@ -85,19 +84,10 @@ impl Parser {
     }
 }
 
-pub(crate) fn fp_index_to_name(idx: u8) -> String {
-    format!("F{}", idx * 2)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::fp_index_to_name;
     use std::fs;
-
-    fn fmt_fp(opt: Option<u8>) -> Option<String> {
-        opt.map(fp_index_to_name)
-    }
 
     #[test]
     fn parse_test() {
@@ -110,20 +100,20 @@ mod tests {
             .iter()
             .enumerate()
             .map(|(i, m)| {
-                let rd = fmt_fp(m.rd).unwrap_or("-".to_string());
-                let rs = fmt_fp(m.rs).unwrap_or("-".to_string());
-                let rt = fmt_fp(m.rt).unwrap_or("-".to_string());
+                let rd = m.rd.map(|r| format!("F{}", r)).unwrap_or("-".to_string());
+                let rs = m.rs.map(|r| format!("F{}", r)).unwrap_or("-".to_string());
+                let rt = m.rt.map(|r| format!("F{}", r)).unwrap_or("-".to_string());
                 let base = m.base.map(|r| format!("R{}", r)).unwrap_or("-".into());
                 let offset = m.offset.map_or("-".to_string(), |v| v.to_string());
                 
-            format!(
-                "{:<03}:  {:<6} rd: {:<6} rs: {:<6} rt: {:<6} offset: {:<6} base: {}",
-                i, format!("{:?}", m.inst_type),
-                rd, rs, rt, offset, base
-            )
-        })
-        .collect::<Vec<_>>()
-        .join("\n");
+                format!(
+                    "{:<03}:  {:<6} rd: {:<6} rs: {:<6} rt: {:<6} offset: {:<6} base: {}",
+                    i, format!("{:?}", m.inst_type),
+                    rd, rs, rt, offset, base
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
 
         println!("\n=================================================\n{}", dump);
 

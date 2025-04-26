@@ -1,7 +1,7 @@
-use crate::utils::parser::{Parser, fp_index_to_name};
+use crate::utils::parser::Parser;
 
 pub struct RegisterFile {
-    pub fp: [f64; 16],     // F0, F2, F4, ..., F30
+    pub fp: [f64; 32],     // F0, F2, F4, ..., F30
     pub int: [i32; 32],    // R0, R1, R2, ..., R31
 }
 
@@ -47,8 +47,14 @@ impl Default for RegisterFile {
     fn default() -> Self {
         let mut int = [0; 32];
         int[1] = 16;
+        
+        let mut fp = [0.0; 32];
+        for i in (0..32).step_by(2) {
+            fp[i] = 1.0;
+        }
+        
         Self {
-            fp: [1.0; 16],
+            fp: [1.0; 32],
             int,
         }
     }
@@ -57,12 +63,13 @@ impl Default for RegisterFile {
 impl std::fmt::Display for RegisterFile {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "------------- Floating Point Registers -------------")?;
-        for (i, v) in self.fp.iter().enumerate() {
-            let name = fp_index_to_name(i as u8);
-            write!(f, "{:<3} = {:<7.2} ", name, v)?;
-            
-            if (i + 1) % 4 == 0 {
-                writeln!(f)?;
+        for (i, val) in self.fp.iter().enumerate() {
+            if i % 2 == 0 {
+                write!(f, "F{:<2} = {:<7.2} ", i, val)?;
+                
+                if (i / 2 + 1) % 4 == 0 {
+                    writeln!(f)?;
+                }
             }
         }
         writeln!(f)?;
