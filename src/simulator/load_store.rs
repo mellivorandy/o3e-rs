@@ -67,3 +67,41 @@ impl StoreBuffer {
         *self = StoreBuffer::new(&self.name);
     }
 }
+
+impl std::fmt::Display for LoadBuffer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} | busy: {:<3} | base: R{:<2} | offset: {:<3} | dest: F{:<2} | remain: {:<2} | inst_idx: {:?}",
+            self.name,
+            if self.busy { "Yes" } else { "No" },
+            self.base,
+            self.offset,
+            self.dest,
+            self.remaining_cycles,
+            self.inst_idx
+        )
+    }
+}
+
+impl std::fmt::Display for StoreBuffer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let data = match &self.data {
+            Some(StoreData::Ready(v)) => format!("V={}", v),
+            Some(StoreData::Waiting(q)) => format!("Q={}", q),
+            None => "-".to_string(),
+        };
+
+        write!(
+            f,
+            "{} | busy: {:<3} | base: R{:<2} | offset: {:<3} | data: {:<8} | remain: {:<2} | inst_idx: {:?}",
+            self.name,
+            if self.busy { "Yes" } else { "No" },
+            self.base,
+            self.offset,
+            data,
+            self.remaining_cycles,
+            self.inst_idx
+        )
+    }
+}
