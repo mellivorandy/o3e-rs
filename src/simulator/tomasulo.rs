@@ -73,147 +73,162 @@ impl Tomasulo {
     }
 
     pub fn issue_stage(&mut self) {
-        for (i, inst) in self.instructions.iter_mut().enumerate() {
-            if inst.time.issue.is_some() {
-                continue;
+        let next_issue_idx = self.instructions
+            .iter()
+            .filter(|inst| inst.time.issue.is_some())
+            .count();
+    
+        // No instructions to be issued
+        if next_issue_idx >= self.instructions.len() {
+            return;
+        }
+    
+        // In-order issue
+        if next_issue_idx > 0 {
+            let prev_inst = &self.instructions[next_issue_idx - 1];
+            if prev_inst.time.issue.is_none() {
+                return;
             }
+        }
+    
+        let inst = &mut self.instructions[next_issue_idx];
+        let meta = &inst.meta;
+    
+        match meta.inst_type {
+            InstructionType::LD => {
+                if let Some(lb) = self.load_buffers.iter_mut().find(|b| !b.busy) {
+                    let rd = meta.rd.expect("LD missing destination register (rd)");
+                    let offset = meta.offset.expect("LD missing offset");
+                    let base = meta.base.expect("LD missing base register");
+    
+                    lb.busy = true;
 
-            let meta = &inst.meta;
+                    lb.dest = Some(rd as usize);
+                    lb.offset = Some(offset);
+                    lb.base = Some(base as usize);
+                    
+                    lb.remaining_cycles = Some(Cycle::new(meta.inst_type.exec_cycles() as u32));
+                    lb.inst_idx = Some(next_issue_idx);
+    
+                    self.f_register_status.set(rd as usize, lb.name.clone());
+                    inst.time.issue = Some(self.current_cycle);
+                }
+            }
+    
+            InstructionType::SD => {
+                if let Some(sb) = self.store_buffers.iter_mut().find(|b| !b.busy) {
+                    let rs = meta.rs.expect("SD missing source register (rs)");
+                    let base = meta.base.expect("SD missing base register");
+                    let offset = meta.offset.expect("SD missing offset");
+    
+                    sb.busy = true;
 
-            match meta.inst_type {
-                InstructionType::LD => {
-                    if let Some(lb) = self.load_buffers.iter_mut().find(|b| !b.busy) {
-                        let rd = meta.rd.expect("LD instruction missing destination register");
-                        let offset = meta.offset.expect("LD instruction missing offset");
-                        let base = meta.base.expect("LD instruction missing base register");
-                         
-                        lb.busy = true;
-                        lb.dest = Some(rd as usize);
-                        lb.offset = Some(offset);
-                        lb.base = Some(base as usize);
-                        
-                        lb.remaining_cycles = Some(Cycle::new(meta.inst_type.exec_cycles() as u32));
-                        lb.inst_idx = Some(i);
-                        self.f_register_status.set(rd as usize, lb.name.clone());
-                        inst.time.issue = Some(self.current_cycle);
-                        break;
-                    }
+                    sb.data = match self.f_register_status.get(rs as usize) {
+                        Some(station) => Some(StoreData::Waiting(station.clone())),
+                        None => Some(StoreData::Ready(self.registers.fp[rs as usize])),
+                    };
+                    sb.offset = Some(offset);
+                    sb.base = Some(base as usize);
+                    
+                    sb.remaining_cycles = Some(Cycle::new(meta.inst_type.exec_cycles() as u32));
+                    sb.inst_idx = Some(next_issue_idx);
+    
+                    inst.time.issue = Some(self.current_cycle);
                 }
+            }
     
-                InstructionType::SD => {
-                    if let Some(sb) = self.store_buffers.iter_mut().find(|b| !b.busy) {
-                        let rs = meta.rs.expect("SD instruction missing source register");
-                        let base = meta.base.expect("SD instruction missing base register");
-                        let offset = meta.offset.expect("SD instruction missing offset");
-                        
-                        sb.busy = true; 
-                        sb.data = match self.f_register_status.get(rs as usize) {
-                            Some(station) => Some(StoreData::Waiting(station.clone())),
-                            None => Some(StoreData::Ready(self.registers.fp[rs as usize])),
-                        };
-                        sb.offset = Some(offset);
-                        sb.base = Some(base as usize);
-                        
-                        sb.remaining_cycles = Some(Cycle::new(meta.inst_type.exec_cycles() as u32));
-                        sb.inst_idx = Some(i);
-                        inst.time.issue = Some(self.current_cycle);
-                        break;
+            InstructionType::ADDD | InstructionType::SUBD => {
+                if let Some(rs) = self.add_stations.iter_mut().find(|s| !s.busy) {
+                    rs.busy = true;
+                    rs.op = Some(meta.inst_type.clone());
+                    rs.remaining_cycles = Some(Cycle::new(meta.inst_type.exec_cycles() as u32));
+                    rs.inst_idx = Some(next_issue_idx);
+    
+                    if let Some(fd) = meta.rd {
+                        self.f_register_status.set(fd as usize, rs.name.clone());
                     }
+    
+                    if let Some(rs1) = meta.rs {
+                        if let Some(qj) = self.f_register_status.get(rs1 as usize) {
+                            rs.vj = None;
+                            rs.qj = Some(qj.clone());
+                        } else {
+                            rs.vj = Some(self.registers.fp[rs1 as usize]);
+                            rs.qj = None;
+                        }
+                    }
+    
+                    if let Some(rs2) = meta.rt {
+                        if let Some(qk) = self.f_register_status.get(rs2 as usize) {
+                            rs.vk = None;
+                            rs.qk = Some(qk.clone());
+                        } else {
+                            rs.vk = Some(self.registers.fp[rs2 as usize]);
+                            rs.qk = None;
+                        }
+                    }
+    
+                    inst.time.issue = Some(self.current_cycle);
                 }
+            }
     
-                InstructionType::ADDD | InstructionType::SUBD => {
-                    if let Some(st) = self.add_stations.iter_mut().find(|s| !s.busy) {
-                        st.busy = true;
-                        st.op = Some(meta.inst_type.clone());
-                        st.remaining_cycles = Some(Cycle::new(meta.inst_type.exec_cycles() as u32));
-                        st.inst_idx = Some(i);
+            InstructionType::MULTD | InstructionType::DIVD => {
+                if let Some(rs) = self.mul_stations.iter_mut().find(|s| !s.busy) {
+                    rs.busy = true;
+                    rs.op = Some(meta.inst_type.clone());
+                    rs.remaining_cycles = Some(Cycle::new(meta.inst_type.exec_cycles() as u32));
+                    rs.inst_idx = Some(next_issue_idx);
     
-                        if let Some(fd) = meta.rd {
-                            self.f_register_status.set(fd.into(), st.name.clone());
-                        }
-    
-                        if let Some(rs) = meta.rs {
-                            if let Some(qj) = self.f_register_status.get(rs.into()) {
-                                // not ready yet
-                                st.vj = None;
-                                st.qj = Some(qj.clone());
-                            } else {
-                                // ready
-                                st.vj = Some(self.registers.fp[rs as usize]);
-                                st.qj = None;
-                            }
-                        }
-    
-                        if let Some(rt) = meta.rt {
-                            if let Some(qk) = self.f_register_status.get(rt.into()) {
-                                st.vk = None;
-                                st.qk = Some(qk.clone());
-                            } else {
-                                st.vk = Some(self.registers.fp[rt as usize]);
-                                st.qk = None;
-                            }
-                        }
-    
-                        inst.time.issue = Some(self.current_cycle);
-                        break;
+                    if let Some(fd) = meta.rd {
+                        self.f_register_status.set(fd as usize, rs.name.clone());
                     }
-                }
     
-                InstructionType::MULTD | InstructionType::DIVD => {
-                    if let Some(st) = self.mul_stations.iter_mut().find(|s| !s.busy) {
-                        st.busy = true;
-                        st.op = Some(meta.inst_type.clone());
-                        st.remaining_cycles = Some(Cycle::new(meta.inst_type.exec_cycles() as u32));
-                        st.inst_idx = Some(i);
-    
-                        if let Some(fd) = meta.rd {
-                            self.f_register_status.set(fd.into(), st.name.clone());
+                    if let Some(rs1) = meta.rs {
+                        if let Some(qj) = self.f_register_status.get(rs1 as usize) {
+                            rs.vj = None;
+                            rs.qj = Some(qj.clone());
+                        } else {
+                            rs.vj = Some(self.registers.fp[rs1 as usize]);
+                            rs.qj = None;
                         }
-    
-                        if let Some(rs) = meta.rs {
-                            if let Some(qj) = self.f_register_status.get(rs.into()) {
-                                st.vj = None;
-                                st.qj = Some(qj.clone());
-                            } else {
-                                st.vj = Some(self.registers.fp[rs as usize]);
-                                st.qj = None;
-                            }
-                        }
-    
-                        if let Some(rt) = meta.rt {
-                            if let Some(qk) = self.f_register_status.get(rt.into()) {
-                                st.vk = None;
-                                st.qk = Some(qk.clone());
-                            } else {
-                                st.vk = Some(self.registers.fp[rt as usize]);
-                                st.qk = None;
-                            }
-                        }
-    
-                        inst.time.issue = Some(self.current_cycle);
-                        break;
                     }
+    
+                    if let Some(rs2) = meta.rt {
+                        if let Some(qk) = self.f_register_status.get(rs2 as usize) {
+                            rs.vk = None;
+                            rs.qk = Some(qk.clone());
+                        } else {
+                            rs.vk = Some(self.registers.fp[rs2 as usize]);
+                            rs.qk = None;
+                        }
+                    }
+    
+                    inst.time.issue = Some(self.current_cycle);
                 }
             }
         }
-    }
-
+    }    
+        
     pub fn execute_stage(&mut self) {
         for st in self.add_stations.iter_mut() {
-            if st.busy && st.op.is_some() {
+            if st.busy && st.op.is_some() && st.qj.is_none() && st.qk.is_none() {
                 if let Some(cycle) = st.remaining_cycles.as_mut() {
                     if cycle.value() > 0 {
                         if let Some(idx) = st.inst_idx {
                             let inst = &mut self.instructions[idx];
                             
+                            // Issued in this cycle
                             if inst.time.exec_start.is_none() {
-                                // issued in this cycle
-                                inst.time.exec_start = Some(self.current_cycle);
+                                // Only after issue cycle
+                                if inst.time.issue.unwrap().value() < self.current_cycle.value() {
+                                    inst.time.exec_start = Some(self.current_cycle);
+                                    cycle.tick_down();
+                                }
                             } else {
-                                // the cycles afterwards
+                                // The cycles afterwards
                                 cycle.tick_down();
                             }
-                
+
                             if cycle.value() == 0 {
                                 inst.time.completion = Some(self.current_cycle);
                             }
@@ -224,18 +239,21 @@ impl Tomasulo {
         }
 
         for st in self.mul_stations.iter_mut() {
-            if st.busy && st.op.is_some() {
+            if st.busy && st.op.is_some()  && st.qj.is_none() && st.qk.is_none() {
                 if let Some(cycle) = st.remaining_cycles.as_mut() {
                     if cycle.value() > 0 {
                         if let Some(idx) = st.inst_idx {
                             let inst = &mut self.instructions[idx];
                             
                             if inst.time.exec_start.is_none() {
-                                inst.time.exec_start = Some(self.current_cycle);
+                                if inst.time.issue.unwrap().value() < self.current_cycle.value() {
+                                    inst.time.exec_start = Some(self.current_cycle);
+                                    cycle.tick_down();
+                                }
                             } else {
                                 cycle.tick_down();
                             }
-                
+
                             if cycle.value() == 0 {
                                 inst.time.completion = Some(self.current_cycle);
                             }
@@ -252,7 +270,10 @@ impl Tomasulo {
                         let inst = &mut self.instructions[idx];
                         
                         if inst.time.exec_start.is_none() {
-                            inst.time.exec_start = Some(self.current_cycle);
+                            if inst.time.issue.unwrap().value() < self.current_cycle.value() {
+                                inst.time.exec_start = Some(self.current_cycle);
+                                cycle.tick_down();
+                            }
                         } else {
                             cycle.tick_down();
                         }
@@ -279,7 +300,10 @@ impl Tomasulo {
                             let inst = &mut self.instructions[idx];
                             
                             if inst.time.exec_start.is_none() {
-                                inst.time.exec_start = Some(self.current_cycle);
+                                if inst.time.issue.unwrap().value() < self.current_cycle.value() {
+                                    inst.time.exec_start = Some(self.current_cycle);
+                                    cycle.tick_down();
+                                }
                             } else {
                                 cycle.tick_down();
                             }
@@ -303,6 +327,7 @@ impl Tomasulo {
                 .and_then(|idx| self.instructions.get(idx))
                 .and_then(|inst| inst.time.completion)
                 .map_or(false, |comp| comp < self.current_cycle)
+            
             {
                 if let Some(idx) = st.inst_idx {
                     let inst = &mut self.instructions[idx];
@@ -331,6 +356,7 @@ impl Tomasulo {
                 .and_then(|idx| self.instructions.get(idx))
                 .and_then(|inst| inst.time.completion)
                 .map_or(false, |comp| comp < self.current_cycle)
+            
             {
                 if let Some(idx) = st.inst_idx {
                     let inst = &mut self.instructions[idx];
@@ -359,6 +385,7 @@ impl Tomasulo {
                 .and_then(|idx| self.instructions.get(idx))
                 .and_then(|inst| inst.time.completion)
                 .map_or(false, |comp| comp < self.current_cycle)
+            
             {
                 if let Some(idx) = lb.inst_idx {
                     let inst = &mut self.instructions[idx];
@@ -388,6 +415,7 @@ impl Tomasulo {
                 .and_then(|idx| self.instructions.get(idx))
                 .and_then(|inst| inst.time.completion)
                 .map_or(false, |comp| comp < self.current_cycle)
+            
             {
                 if let Some(idx) = sb.inst_idx {
                     let inst = &mut self.instructions[idx];
@@ -413,7 +441,7 @@ impl Tomasulo {
             }
         }
 
-        // broadcast to CDB
+        // Broadcast to CDB
         for (station_name, val, fp_idx) in broadcast_list {
             if self.f_register_status.get(fp_idx) == Some(&station_name) {
                 self.registers.fp[fp_idx] = val;
@@ -513,7 +541,13 @@ impl Tomasulo {
         writeln!(file, "------------------------------------ Registers -------------------------------------\n").unwrap();
         writeln!(file, "{}", self.registers).unwrap();
 
-        writeln!(file, "\n\n\n\n\n\n\n\n").unwrap();
+        writeln!(file, "------------------------ Instruction Status ------------------------\n").unwrap();
+        writeln!(file, "                Issue     Exec Start     Exec Comp     Write Result\n").unwrap();
+        for (i, inst) in self.instructions.iter().enumerate() {
+            writeln!(file, "Instruction {}     {}", i + 1, inst.time).unwrap();
+        }
+
+        writeln!(file, "\n\n\n\n\n\n\n\n\n").unwrap();
     }
 
     pub fn run(&mut self, output_path: &str) {
