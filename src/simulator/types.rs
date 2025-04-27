@@ -10,6 +10,10 @@ impl Cycle {
         Self(self.0 + 1)
     }
 
+    pub fn tick_down(&mut self) {
+        self.0 = self.0.saturating_sub(1);
+    }
+
     pub fn value(&self) -> u32 {
         self.0
     }
