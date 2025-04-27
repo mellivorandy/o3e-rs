@@ -48,10 +48,20 @@ pub struct InstructionTime {
 
 impl std::fmt::Display for InstructionTime {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fn format_cycle(opt: Option<Cycle>) -> String {
+            match opt {
+                Some(c) => c.value().to_string(),
+                None => "-".to_string(),
+            }
+        }
+
         write!(
             f,
-            "Issue = {:?}, Exec start = {:?}, Completion = {:?}, Write_back = {:?}",
-            self.issue, self.exec_start, self.completion, self.write_back
+            "{:<3}         {:<3}            {:<3}            {:<3}",
+            format_cycle(self.issue),
+            format_cycle(self.exec_start),
+            format_cycle(self.completion),
+            format_cycle(self.write_back),
         )
     }
 }
