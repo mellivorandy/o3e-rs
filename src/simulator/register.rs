@@ -82,7 +82,6 @@ impl std::fmt::Display for RegisterFile {
                 writeln!(f)?;
             }
         }
-        writeln!(f)?;
 
         Ok(())
     }
