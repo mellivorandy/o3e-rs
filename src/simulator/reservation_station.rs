@@ -1,4 +1,4 @@
-use super::instruction::InstructionType;
+use super::{instruction::InstructionType, types::Cycle};
 
 #[derive(Debug, Clone)]
 pub struct ReservationStation {
@@ -14,7 +14,7 @@ pub struct ReservationStation {
 
     pub busy: bool,
 
-    pub remaining_cycles: u32,
+    pub remaining_cycles: Option<Cycle>,
     pub inst_idx: Option<usize>,               // Index of the instruction
 }
 
@@ -41,7 +41,7 @@ impl Default for ReservationStation {
             qj: None,
             qk: None,
             busy: false,
-            remaining_cycles: 0,
+            remaining_cycles: None,
             inst_idx: None,
         }
     }
@@ -49,6 +49,11 @@ impl Default for ReservationStation {
 
 impl std::fmt::Display for ReservationStation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let remain = match &self.remaining_cycles {
+            Some(c) => format!("{}", c.value()),
+            None => "-".to_string(),
+        };
+        
         write!(
             f,
             "{:<5} | busy: {:<3} | op: {:<6} | vj: {:<6} | vk: {:<6} | qj: {:<6} | qk: {:<6} | remain: {:<2} | inst_idx: {}",
@@ -74,7 +79,7 @@ impl std::fmt::Display for ReservationStation {
             self.qj.as_deref().unwrap_or("-"),
             self.qk.as_deref().unwrap_or("-"),
 
-            self.remaining_cycles,
+            remain,
 
             match self.inst_idx {
                 Some(idx) => idx.to_string(),
