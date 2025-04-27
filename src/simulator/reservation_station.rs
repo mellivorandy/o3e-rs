@@ -82,9 +82,9 @@ impl std::fmt::Display for ReservationStation {
             remain,
 
             match self.inst_idx {
-                Some(idx) => idx.to_string(),
+                Some(idx) => (idx + 1).to_string(),
                 None => "-".to_string(),
-            }
+            }            
         )
     }
 }
