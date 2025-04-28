@@ -57,7 +57,7 @@ impl std::fmt::Display for InstructionTime {
 
         write!(
             f,
-            "{:<3}         {:<3}            {:<3}            {:<3}",
+            "{:>3}         {:>3}            {:>3}            {:>3}",
             format_cycle(self.issue),
             format_cycle(self.exec_start),
             format_cycle(self.completion),
