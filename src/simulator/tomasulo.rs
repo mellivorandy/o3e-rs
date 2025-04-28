@@ -150,8 +150,13 @@ impl Tomasulo {
     
                     if let Some(rs1) = meta.rs {
                         if let Some(qj) = self.f_register_status.get(rs1 as usize) {
-                            rs.vj = None;
-                            rs.qj = Some(qj.clone());
+                            if qj != &rs.name {
+                                rs.vj = None;
+                                rs.qj = Some(qj.clone());
+                            } else {
+                                rs.vj = Some(self.registers.fp[rs1 as usize]);
+                                rs.qj = None;
+                            }
                         } else {
                             rs.vj = Some(self.registers.fp[rs1 as usize]);
                             rs.qj = None;
@@ -160,14 +165,19 @@ impl Tomasulo {
     
                     if let Some(rs2) = meta.rt {
                         if let Some(qk) = self.f_register_status.get(rs2 as usize) {
-                            rs.vk = None;
-                            rs.qk = Some(qk.clone());
+                            if qk != &rs.name {
+                                rs.vk = None;
+                                rs.qk = Some(qk.clone());
+                            } else {
+                                rs.vk = Some(self.registers.fp[rs2 as usize]);
+                                rs.qk = None;
+                            }
                         } else {
                             rs.vk = Some(self.registers.fp[rs2 as usize]);
                             rs.qk = None;
                         }
                     }
-    
+                    
                     inst.time.issue = Some(self.current_cycle);
                 }
             }
@@ -185,8 +195,13 @@ impl Tomasulo {
     
                     if let Some(rs1) = meta.rs {
                         if let Some(qj) = self.f_register_status.get(rs1 as usize) {
-                            rs.vj = None;
-                            rs.qj = Some(qj.clone());
+                            if qj != &rs.name {
+                                rs.vj = None;
+                                rs.qj = Some(qj.clone());
+                            } else {
+                                rs.vj = Some(self.registers.fp[rs1 as usize]);
+                                rs.qj = None;
+                            }
                         } else {
                             rs.vj = Some(self.registers.fp[rs1 as usize]);
                             rs.qj = None;
@@ -195,14 +210,19 @@ impl Tomasulo {
     
                     if let Some(rs2) = meta.rt {
                         if let Some(qk) = self.f_register_status.get(rs2 as usize) {
-                            rs.vk = None;
-                            rs.qk = Some(qk.clone());
+                            if qk != &rs.name {
+                                rs.vk = None;
+                                rs.qk = Some(qk.clone());
+                            } else {
+                                rs.vk = Some(self.registers.fp[rs2 as usize]);
+                                rs.qk = None;
+                            }
                         } else {
                             rs.vk = Some(self.registers.fp[rs2 as usize]);
                             rs.qk = None;
                         }
                     }
-    
+                    
                     inst.time.issue = Some(self.current_cycle);
                 }
             }
