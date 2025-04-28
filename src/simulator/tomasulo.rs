@@ -544,7 +544,7 @@ impl Tomasulo {
         writeln!(file, "------------------------ Instruction Status ------------------------\n").unwrap();
         writeln!(file, "                Issue     Exec Start     Exec Comp     Write Result\n").unwrap();
         for (i, inst) in self.instructions.iter().enumerate() {
-            writeln!(file, "Instruction {}     {}", i + 1, inst.time).unwrap();
+            writeln!(file, "Instruction {}   {}", i + 1, inst.time).unwrap();
         }
 
         writeln!(file, "\n\n\n\n\n\n\n\n\n").unwrap();
