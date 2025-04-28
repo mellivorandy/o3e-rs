@@ -222,7 +222,7 @@ impl Tomasulo {
                             rs.qk = None;
                         }
                     }
-                    
+
                     inst.time.issue = Some(self.current_cycle);
                 }
             }
@@ -308,12 +308,6 @@ impl Tomasulo {
         
         for sb in self.store_buffers.iter_mut() {
             if sb.busy {
-                let data_ready = matches!(sb.data, Some(StoreData::Ready(_)));
-                
-                if !data_ready {
-                    continue;
-                }
-            
                 if let Some(cycle) = sb.remaining_cycles.as_mut() {
                     if cycle.value() > 0 {
                         if let Some(idx) = sb.inst_idx {
