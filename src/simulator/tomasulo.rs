@@ -144,10 +144,6 @@ impl Tomasulo {
                     rs.remaining_cycles = Some(Cycle::new(meta.inst_type.exec_cycles() as u32));
                     rs.inst_idx = Some(next_issue_idx);
     
-                    if let Some(fd) = meta.rd {
-                        self.f_register_status.set(fd as usize, rs.name.clone());
-                    }
-    
                     if let Some(rs1) = meta.rs {
                         if let Some(qj) = self.f_register_status.get(rs1 as usize) {
                             if qj != &rs.name {
@@ -176,6 +172,10 @@ impl Tomasulo {
                             rs.vk = Some(self.registers.fp[rs2 as usize]);
                             rs.qk = None;
                         }
+                    }
+
+                    if let Some(fd) = meta.rd {
+                        self.f_register_status.set(fd as usize, rs.name.clone());
                     }
                     
                     inst.time.issue = Some(self.current_cycle);
@@ -189,10 +189,6 @@ impl Tomasulo {
                     rs.remaining_cycles = Some(Cycle::new(meta.inst_type.exec_cycles() as u32));
                     rs.inst_idx = Some(next_issue_idx);
     
-                    if let Some(fd) = meta.rd {
-                        self.f_register_status.set(fd as usize, rs.name.clone());
-                    }
-    
                     if let Some(rs1) = meta.rs {
                         if let Some(qj) = self.f_register_status.get(rs1 as usize) {
                             if qj != &rs.name {
@@ -221,6 +217,10 @@ impl Tomasulo {
                             rs.vk = Some(self.registers.fp[rs2 as usize]);
                             rs.qk = None;
                         }
+                    }
+
+                    if let Some(fd) = meta.rd {
+                        self.f_register_status.set(fd as usize, rs.name.clone());
                     }
 
                     inst.time.issue = Some(self.current_cycle);
