@@ -17,11 +17,6 @@ impl Cycle {
     pub fn value(&self) -> u32 {
         self.0
     }
-
-    #[allow(dead_code)]
-    pub fn diff(&self, other: &Cycle) -> u32 {
-        self.0.saturating_sub(other.0)
-    }
 }
 
 impl std::fmt::Display for Cycle {
