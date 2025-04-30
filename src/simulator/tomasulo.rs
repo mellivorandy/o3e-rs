@@ -457,8 +457,9 @@ impl Tomasulo {
 
         // Broadcast to CDB
         for (station_name, val, fp_idx) in broadcast_list {
+            self.registers.fp[fp_idx] = val;
+
             if self.f_register_status.get(fp_idx) == Some(&station_name) {
-                self.registers.fp[fp_idx] = val;
                 self.f_register_status.clear(fp_idx);
             }
     
