@@ -1,45 +1,11 @@
-use crate::utils::parser::Parser;
-
 pub struct RegisterFile {
-    pub fp: [f64; 32],     // F0, F2, F4, ..., F30
+    pub fp: [f64; 32],     // F0, F1, F2, ..., F30; but only even-numbered registers are used
     pub int: [i32; 32],    // R0, R1, R2, ..., R31
 }
 
 impl RegisterFile {
     pub fn new() -> Self {
         Self::default()
-    }
-
-    #[allow(dead_code)]
-    pub fn read_fp(&self, name: &str) -> Option<f64> {
-        Parser::parse_fp_register(name).map(|idx| self.fp[idx as usize])
-    }
-
-    #[allow(dead_code)]
-    pub fn write_fp(&mut self, name: &str, value: f64) -> bool {
-        match Parser::parse_fp_register(name) {
-            Some(idx) => {
-                self.fp[idx as usize] = value;
-                true
-            }
-            None => false,
-        }
-    }
-
-    #[allow(dead_code)]
-    pub fn read_int(&self, name: &str) -> Option<i32> {
-        Parser::parse_int_register(name).map(|idx| self.int[idx as usize])
-    }
-
-    #[allow(dead_code)]
-    pub fn write_int(&mut self, name: &str, value: i32) -> bool {
-        match Parser::parse_int_register(name) {
-            Some(idx) => {
-                self.int[idx as usize] = value;
-                true
-            }
-            None => false,
-        }
     }
 }
 
@@ -54,7 +20,7 @@ impl Default for RegisterFile {
         }
         
         Self {
-            fp: [1.0; 32],
+            fp,
             int,
         }
     }
