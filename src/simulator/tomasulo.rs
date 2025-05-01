@@ -141,7 +141,7 @@ impl Tomasulo {
                 if let Some(rs) = self.add_stations.iter_mut().find(|s| !s.busy) {
                     rs.busy = true;
                     rs.op = Some(meta.inst_type.clone());
-                    rs.remaining_cycles = Some(Cycle::new(meta.inst_type.exec_cycles() as u32));
+                    rs.remaining_cycles = None;
                     rs.inst_idx = Some(next_issue_idx);
     
                     if let Some(rs1) = meta.rs {
@@ -186,7 +186,7 @@ impl Tomasulo {
                 if let Some(rs) = self.mul_stations.iter_mut().find(|s| !s.busy) {
                     rs.busy = true;
                     rs.op = Some(meta.inst_type.clone());
-                    rs.remaining_cycles = Some(Cycle::new(meta.inst_type.exec_cycles() as u32));
+                    rs.remaining_cycles = None;
                     rs.inst_idx = Some(next_issue_idx);
     
                     if let Some(rs1) = meta.rs {
@@ -479,6 +479,25 @@ impl Tomasulo {
                     if q == &station_name {
                         sb.data = Some(StoreData::Ready(val));
                     }
+                }
+            }
+        }
+
+        // Operands just became ready, initialize remaining cycles
+        for st in self.add_stations.iter_mut() {
+            if st.busy && st.op.is_some() && st.qj.is_none() && st.qk.is_none() && st.remaining_cycles.is_none() {
+                
+                if let Some(idx) = st.inst_idx {
+                    let inst = &mut self.instructions[idx];
+                    st.remaining_cycles = Some(Cycle::new(inst.meta.inst_type.exec_cycles() as u32));
+                }
+            }
+        }
+        for st in self.mul_stations.iter_mut() {
+            if st.busy && st.op.is_some() && st.qj.is_none() && st.qk.is_none() && st.remaining_cycles.is_none() {
+                if let Some(idx) = st.inst_idx {
+                    let inst = &mut self.instructions[idx];
+                    st.remaining_cycles = Some(Cycle::new(inst.meta.inst_type.exec_cycles() as u32));
                 }
             }
         }
