@@ -551,6 +551,11 @@ impl Tomasulo {
 
         writeln!(file, "==================================================== Cycle {} ====================================================", self.current_cycle.value()).unwrap();
 
+        writeln!(file, "\n------ Instruction ------").unwrap();
+        for (i, inst) in self.instructions.iter().enumerate() {
+            writeln!(file, "{:>3}:   {}", i + 1, inst.meta.asm()).unwrap();
+        }
+        
         writeln!(file, "\n-------------------------------------------- Reservation Stations --------------------------------------------").unwrap();
         for rs in &self.add_stations {
             writeln!(file, "{}", rs).unwrap();
