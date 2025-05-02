@@ -1,5 +1,13 @@
 # o3e-rs &mdash; a Tomasulo's algorithm simulator 
 
+<br>
+
+[<img alt="github" src="https://img.shields.io/badge/MELLIVORANDY%2Fo3e--rs-%23f5cc5b?style=for-the-badge&logo=GITHUB&label=GITHUB" height="20">](https://github.com/mellivorandy/o3e-rs)
+[<img alt="build" src="https://github.com/mellivorandy/o3e-rs/actions/workflows/rust.yml/badge.svg" height="20">](https://github.com/mellivorandy/o3e-rs/actions)
+[<img alt="license" src="https://img.shields.io/github/license/mellivorandy/o3e-rs?style=for-the-badge&logo=GITHUB&color=light%20green" height="20">](https://github.com/mellivorandy/o3e-rs?tab=MIT-1-ov-file)
+
+<br>
+
 A cycle-accurate implementation of Tomasulo’s algorithm. This simulator models out-of-order execution (OoOE), register renaming, and reservation station behavior based on the classic single Common Data Bus (CDB) architecture, originally introduced in 1967 by IBM computer architect Robert Tomasulo.
 
 <br>
