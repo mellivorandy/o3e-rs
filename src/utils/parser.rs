@@ -91,7 +91,7 @@ mod tests {
 
     #[test]
     fn parse_test() {
-        let content = fs::read_to_string("data/simple/simple_0.txt")
+        let content = fs::read_to_string("data/sample/sample_0.txt")
             .expect("Failed to read txt file.");
 
         let metas = Parser::parse_file(&content);
