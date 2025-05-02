@@ -42,42 +42,42 @@ impl InstructionMeta {
         
         match self.inst_type {
             LD => format!(
-                "L.D   F{}, {}(R{})",
+                "L.D    F{:<2}, {}(R{})",
                 self.rd.unwrap(),
                 self.offset.unwrap(),
                 self.base.unwrap()
             ),
             
             SD => format!(
-                "S.D   F{}, {}(R{})",
+                "S.D    F{:<2}, {}(R{})",
                 self.rs.unwrap(),
                 self.offset.unwrap(),
                 self.base.unwrap()
             ),
             
             ADDD => format!(
-                "ADD.D F{}, F{}, F{}",
+                "ADD.D  F{:<2}, F{:<2}, F{:<2}",
                 self.rd.unwrap(),
                 self.rs.unwrap(),
                 self.rt.unwrap()
             ),
             
             SUBD => format!(
-                "SUB.D F{}, F{}, F{}",
+                "SUB.D  F{:<2}, F{:<2}, F{:<2}",
                 self.rd.unwrap(),
                 self.rs.unwrap(),
                 self.rt.unwrap()
             ),
             
             MULTD => format!(
-                "MUL.D F{}, F{}, F{}",
+                "MUL.D  F{:<2}, F{:<2}, F{:<2}",
                 self.rd.unwrap(),
                 self.rs.unwrap(),
                 self.rt.unwrap()
             ),
             
             DIVD => format!(
-                "DIV.D F{}, F{}, F{}",
+                "DIV.D  F{:<2}, F{:<2}, F{:<2}",
                 self.rd.unwrap(),
                 self.rs.unwrap(),
                 self.rt.unwrap()
