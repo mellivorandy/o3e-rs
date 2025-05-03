@@ -1,4 +1,4 @@
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct RegisterResultStatus {
     pub table: [Option<String>; 16],    // F0, F2, F4, ..., F30
 }
