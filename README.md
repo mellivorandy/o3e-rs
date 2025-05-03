@@ -79,7 +79,7 @@ cargo run -- <txt_file_path>
 
 <br>
 
-In this project structure, the txt file for simulation is located in o3e-rs/data, change the path if the txt file is moved or new files are added.
+In this project structure, the txt file for simulation is located in `o3e-rs/data`, change the path if the txt file is moved or new files are added.
 
 <br>
 
@@ -133,7 +133,7 @@ src/
 
 ### Use Cases & Applications
 
-This Tomasulo algorithm simulator can serve as:
+This Tomasulo's algorithm simulator can serve as:
 
 - Educational Tool: A clear, cycle-accurate simulator for understanding dynamic scheduling, register renaming, and data hazard resolution. Ideal for computer architecture courses.
 
