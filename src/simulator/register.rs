@@ -1,3 +1,4 @@
+#[derive(Clone)]
 pub struct RegisterFile {
     pub fp: [f64; 32],     // F0, F1, F2, ..., F30; but only even-numbered registers are used
     pub int: [i32; 32],    // R0, R1, R2, ..., R31
