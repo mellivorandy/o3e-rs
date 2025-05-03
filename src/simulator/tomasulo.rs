@@ -104,6 +104,7 @@ impl Tomasulo {
                     lb.busy = true;
 
                     lb.dest = Some(rd as usize);
+
                     lb.offset = Some(offset);
                     lb.base = Some(base as usize);
                     
@@ -127,6 +128,7 @@ impl Tomasulo {
                         Some(station) => Some(StoreData::Waiting(station.clone())),
                         None => Some(StoreData::Ready(self.registers.fp[rs as usize])),
                     };
+
                     sb.offset = Some(offset);
                     sb.base = Some(base as usize);
                     
@@ -341,7 +343,6 @@ impl Tomasulo {
                 .and_then(|idx| self.instructions.get(idx))
                 .and_then(|inst| inst.time.completion)
                 .map_or(false, |comp| comp < self.current_cycle)
-            
             {
                 if let Some(idx) = st.inst_idx {
                     let inst = &mut self.instructions[idx];
@@ -370,7 +371,6 @@ impl Tomasulo {
                 .and_then(|idx| self.instructions.get(idx))
                 .and_then(|inst| inst.time.completion)
                 .map_or(false, |comp| comp < self.current_cycle)
-            
             {
                 if let Some(idx) = st.inst_idx {
                     let inst = &mut self.instructions[idx];
@@ -399,7 +399,6 @@ impl Tomasulo {
                 .and_then(|idx| self.instructions.get(idx))
                 .and_then(|inst| inst.time.completion)
                 .map_or(false, |comp| comp < self.current_cycle)
-            
             {
                 if let Some(idx) = lb.inst_idx {
                     let inst = &mut self.instructions[idx];
@@ -429,7 +428,6 @@ impl Tomasulo {
                 .and_then(|idx| self.instructions.get(idx))
                 .and_then(|inst| inst.time.completion)
                 .map_or(false, |comp| comp < self.current_cycle)
-            
             {
                 if let Some(idx) = sb.inst_idx {
                     let inst = &mut self.instructions[idx];
