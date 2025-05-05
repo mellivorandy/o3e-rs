@@ -69,10 +69,16 @@ cargo build --release
 
 <br>
 
-To execute the program, use the following command:
+To execute the program, use either of the following commands:
 
-```Rust
+```bash
 cargo run -- <txt_file_path>
+```
+
+or
+
+```bash
+./target/release/o3e-rs <txt_file_path>
 ```
 
 - <txt_file_path>: The path of the txt file to be simulated.
