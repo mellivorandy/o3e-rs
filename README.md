@@ -130,9 +130,19 @@ This will load and parse data/sample/sample_0.txt, printing a formatted list of 
 
 ```bash
 src/
-├── simulator/   # Core logic and internal data structures
-├── utils/       # Instruction Parser
-└── main.rs      # Binary entry point
+├── simulator/                       # Core logic and internal data structures
+│   ├── instruction.rs               # Instruction metadata and timing info
+│   ├── load_store.rs                # Load buffer and store buffer implementation
+│   ├── register_result_status.rs    # Register result tracking (Qi table)
+│   ├── register.rs                  # Floating-point and integer register file
+│   ├── reservation_station.rs       # Reservation Station structs
+│   ├── tomasulo.rs                  # Tomasulo's algorithm orchestration and core cycle stages
+│   └── types.rs                     # Shared types like Cycle
+├── utils/                           # Utility module
+│   └── parser.rs                    # Assembly-like instruction parser
+├── main.rs                          # Binary entry point
+├── simulator.rs                     # Module re-exports for simulator/
+└── utils.rs                         # Module re-exports for utils/
 ```
 
 ---
