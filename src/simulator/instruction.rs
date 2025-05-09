@@ -3,7 +3,7 @@ use super::types::Cycle;
 pub type FPRegister = u8;
 pub type IntRegister = u8;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum InstructionType {
     LD,      // L.D
     SD,      // S.D
