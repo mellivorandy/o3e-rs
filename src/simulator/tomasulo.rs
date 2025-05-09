@@ -6,6 +6,7 @@ use crate::simulator::load_store::*;
 use crate::simulator::register_result_status::*;
 use crate::simulator::register::RegisterFile;
 use crate::simulator::types::Cycle;
+use crate::utils::helper::collect_ready_units;
 use crate::utils::parser::Parser;
 
 pub struct Tomasulo {
@@ -338,72 +339,99 @@ impl Tomasulo {
         let mut to_release: Vec<String> = Vec::new();
         let mut broadcast_list = Vec::new();
         
-        for st in self.add_stations.iter_mut() {
-            if st.busy && st.inst_idx
-                .and_then(|idx| self.instructions.get(idx))
-                .and_then(|inst| inst.time.completion)
-                .map_or(false, |comp| comp < self.current_cycle)
-            {
-                if let Some(idx) = st.inst_idx {
-                    let inst = &mut self.instructions[idx];
-                    
-                    if inst.time.write_back.is_none() {
-                        let val = match st.op.as_ref().unwrap() {
-                            InstructionType::ADDD => st.vj.unwrap() + st.vk.unwrap(),
-                            InstructionType::SUBD => st.vj.unwrap() - st.vk.unwrap(),
-                            _ => unreachable!(),
-                        };
-                        
-                        let dest = inst.meta.rd.expect("Missing rd in ADD/SUB instruction") as usize;
-                        
-                        inst.time.write_back = Some(self.current_cycle);
-                        broadcast_list.push((st.name.clone(), val, dest));
-
-                        st.remaining_cycles = None;
-                        to_release.push(st.name.clone());
-                    }
-                }
-            }
-        }
+        let mut written_registers = std::collections::HashSet::new();
+        let mut written_memory_addresses = std::collections::HashSet::new();
         
-        for st in self.mul_stations.iter_mut() {
-            if st.busy && st.inst_idx
-                .and_then(|idx| self.instructions.get(idx))
-                .and_then(|inst| inst.time.completion)
-                .map_or(false, |comp| comp < self.current_cycle)
-            {
-                if let Some(idx) = st.inst_idx {
-                    let inst = &mut self.instructions[idx];
+        let mut candidates  = Vec::new();
+        
+        // Check for candidates to write back
+        collect_ready_units(
+            &mut candidates,
+            &mut self.add_stations,
+            &mut self.instructions,
+            self.current_cycle,
+            |_| true,
+        );
+        collect_ready_units(
+            &mut candidates,
+            &mut self.mul_stations,
+            &mut self.instructions,
+            self.current_cycle,
+            |_| true,
+        );
+        collect_ready_units(
+            &mut candidates,
+            &mut self.load_buffers,
+            &mut self.instructions,
+            self.current_cycle,
+            |_| true,
+        );
+        collect_ready_units(
+            &mut candidates,
+            &mut self.store_buffers,
+            &mut self.instructions,
+            self.current_cycle,
+            |sb| matches!(sb.data, Some(StoreData::Ready(_))),
+        );
+        
+        // Sort candidates by instruction index
+        candidates.sort_by_key(|c| c.inst_idx);
+        
+        // Process candidates
+        for cand in candidates {
+            match cand.itype {
+                InstructionType::ADDD | InstructionType::SUBD => {
+                    let st = &mut self.add_stations[cand.unit_idx];
+                    let inst = &mut self.instructions[cand.inst_idx];
+                    let rd = inst.meta.rd.expect("Missing rd in ADD/SUB instruction") as usize;
                     
-                    if inst.time.write_back.is_none() {
-                        let val = match st.op.as_ref().unwrap() {
-                            InstructionType::MULTD => st.vj.unwrap() * st.vk.unwrap(),
-                            InstructionType::DIVD => st.vj.unwrap() / st.vk.unwrap(),
-                            _ => unreachable!(),
-                        };
-
-                        let dest = inst.meta.rd.expect("Missing rd in MUL/DIV instruction") as usize;
-                        
-                        inst.time.write_back = Some(self.current_cycle);
-                        broadcast_list.push((st.name.clone(), val, dest));
-
-                        st.remaining_cycles = None;
-                        to_release.push(st.name.clone());
+                    // Check if the register is already written by another instruction
+                    if written_registers.contains(&rd) {
+                        continue;
                     }
-                }
-            }
-        }
-
-        for lb in self.load_buffers.iter_mut() {
-            if lb.busy && lb.inst_idx
-                .and_then(|idx| self.instructions.get(idx))
-                .and_then(|inst| inst.time.completion)
-                .map_or(false, |comp| comp < self.current_cycle)
-            {
-                if let Some(idx) = lb.inst_idx {
-                    let inst = &mut self.instructions[idx];
                     
-                    if inst.time.write_back.is_none() {
+                    let val = match st.op.as_ref().unwrap() {
+                        InstructionType::ADDD => st.vj.unwrap() + st.vk.unwrap(),
+                        InstructionType::SUBD => st.vj.unwrap() - st.vk.unwrap(),
+                        _ => unreachable!(),
+                    };
+                    
+                    inst.time.write_back = Some(self.current_cycle);
+                    broadcast_list.push((st.name.clone(), val, rd));
+                    st.remaining_cycles = None;
+                    to_release.push(st.name.clone());
+                    written_registers.insert(rd);
+                },
+                InstructionType::MULTD | InstructionType::DIVD => {
+                    let st = &mut self.mul_stations[cand.unit_idx];
+                    let inst = &mut self.instructions[cand.inst_idx];
+                    let rd = inst.meta.rd.expect("Missing rd in MUL/DIV instruction") as usize;
+                    
+                    if written_registers.contains(&rd) {
+                        continue;
+                    }
+                    
+                    let val = match st.op.as_ref().unwrap() {
+                        InstructionType::MULTD => st.vj.unwrap() * st.vk.unwrap(),
+                        InstructionType::DIVD => st.vj.unwrap() / st.vk.unwrap(),
+                        _ => unreachable!(),
+                    };
+                    
+                    inst.time.write_back = Some(self.current_cycle);
+                    broadcast_list.push((st.name.clone(), val, rd));
+                    st.remaining_cycles = None;
+                    to_release.push(st.name.clone());
+                    written_registers.insert(rd);
+                },
+                InstructionType::LD => {
+                    let lb = &mut self.load_buffers[cand.unit_idx];
+                    let inst = &mut self.instructions[cand.inst_idx];
+                    
+                    if let Some(dest) = lb.dest {
+                        if written_registers.contains(&dest) {
+                            continue;
+                        }
+                        
                         let base = lb.base.expect("LoadBuffer missing base register");
                         let offset = lb.offset.expect("LoadBuffer missing offset");
                         
@@ -411,45 +439,34 @@ impl Tomasulo {
                         let val = self.memory[addr as usize];
                         
                         inst.time.write_back = Some(self.current_cycle);
-                        
-                        if let Some(dest) = lb.dest {
-                            broadcast_list.push((lb.name.clone(), val, dest));
-                        }
-
+                        broadcast_list.push((lb.name.clone(), val, dest));
                         lb.remaining_cycles = None;
                         to_release.push(lb.name.clone());
+                        written_registers.insert(dest);
                     }
-                }
-            }
-        }
-
-        for sb in self.store_buffers.iter_mut() {
-            if sb.busy && sb.inst_idx
-                .and_then(|idx| self.instructions.get(idx))
-                .and_then(|inst| inst.time.completion)
-                .map_or(false, |comp| comp < self.current_cycle)
-            {
-                if let Some(idx) = sb.inst_idx {
-                    let inst = &mut self.instructions[idx];
+                },
+                InstructionType::SD => {
+                    let sb = &mut self.store_buffers[cand.unit_idx];
+                    let inst = &mut self.instructions[cand.inst_idx];
                     
-                    if inst.time.write_back.is_none() {
-                        let base = sb.base.expect("StoreBuffer missing base register");
-                        let offset = sb.offset.expect("StoreBuffer missing offset");
-                        
-                        let addr = (self.registers.int[base] + offset) / 8;
-                        
-                        let store_val = match sb.data.as_ref().expect("Missing store data") {
-                            StoreData::Ready(v) => *v,
-                            StoreData::Waiting(_) => continue,
-                        };
-                        
+                    let base = sb.base.expect("StoreBuffer missing base register");
+                    let offset = sb.offset.expect("StoreBuffer missing offset");
+                    
+                    let addr = (self.registers.int[base] + offset) / 8;
+                    
+                    // Check if the address is already written by another instruction
+                    if written_memory_addresses.contains(&addr) {
+                        continue;
+                    }
+                    
+                    if let Some(StoreData::Ready(store_val)) = sb.data {
                         self.memory[addr as usize] = store_val;
                         inst.time.write_back = Some(self.current_cycle);
-
                         sb.remaining_cycles = None;
                         to_release.push(sb.name.clone());
+                        written_memory_addresses.insert(addr);
                     }
-                }
+                },
             }
         }
 
@@ -484,7 +501,6 @@ impl Tomasulo {
         // Operands just became ready, initialize remaining cycles
         for st in self.add_stations.iter_mut() {
             if st.busy && st.op.is_some() && st.qj.is_none() && st.qk.is_none() && st.remaining_cycles.is_none() {
-                
                 if let Some(idx) = st.inst_idx {
                     let inst = &mut self.instructions[idx];
                     st.remaining_cycles = Some(Cycle::new(inst.meta.inst_type.exec_cycles() as u32));
