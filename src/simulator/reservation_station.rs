@@ -1,19 +1,15 @@
+use crate::utils::helper::ExecUnitSlot;
 use super::{instruction::InstructionType, types::Cycle};
 
 #[derive(Debug, Clone)]
 pub struct ReservationStation {
     pub name: String,                          // Name of the station, e.g., Add1 
-
     pub op: Option<InstructionType>,    // Type of the instruction, e.g., MUL.D
-
     pub vj: Option<f64>,
     pub vk: Option<f64>,
-
     pub qj: Option<String>,
     pub qk: Option<String>,
-
     pub busy: bool,
-
     pub remaining_cycles: Option<Cycle>,
     pub inst_idx: Option<usize>,               // Index of the instruction
 }
@@ -45,6 +41,11 @@ impl Default for ReservationStation {
             inst_idx: None,
         }
     }
+}
+
+impl ExecUnitSlot for ReservationStation {
+    fn is_busy(&self) -> bool { self.busy }
+    fn inst_index(&self) -> Option<usize> { self.inst_idx }
 }
 
 impl std::fmt::Display for ReservationStation {

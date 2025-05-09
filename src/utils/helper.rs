@@ -1,6 +1,8 @@
 use crate::simulator::instruction::{Instruction, InstructionType};
 use crate::simulator::types::Cycle;
 
+// Provides a uniform way for the simulator to query any slot
+// in the pipeline for its busy status and instruction index.
 pub trait ExecUnitSlot {
     fn is_busy(&self) -> bool;
     fn inst_index(&self) -> Option<usize>;

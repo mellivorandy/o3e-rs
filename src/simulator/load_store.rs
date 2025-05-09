@@ -1,3 +1,4 @@
+use crate::utils::helper::ExecUnitSlot;
 use super::types::Cycle;
 
 #[derive(Debug, Clone)]
@@ -62,6 +63,16 @@ impl StoreBuffer {
     pub fn clear(&mut self) {
         *self = StoreBuffer::new(&self.name);
     }
+}
+
+impl ExecUnitSlot for LoadBuffer {
+    fn is_busy(&self) -> bool { self.busy }
+    fn inst_index(&self) -> Option<usize> { self.inst_idx }
+}
+
+impl ExecUnitSlot for StoreBuffer {
+    fn is_busy(&self) -> bool { self.busy }
+    fn inst_index(&self) -> Option<usize> { self.inst_idx }
 }
 
 impl std::fmt::Display for LoadBuffer {
